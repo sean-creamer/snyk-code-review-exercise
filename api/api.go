@@ -41,22 +41,28 @@ func packageHandler(w http.ResponseWriter, r *http.Request) {
 
 	rootPkg := &NpmPackageVersion{Name: pkgName, Dependencies: map[string]*NpmPackageVersion{}}
 	if err := resolveDependencies(rootPkg, pkgVersion); err != nil {
+		// REVIEW: Use a log package instead of just printing errors to standard out.
 		println(err.Error())
+		// REVIEW: Use http package status codes instead of hardcoding the status.
 		w.WriteHeader(500)
 		return
 	}
 
 	stringified, err := json.MarshalIndent(rootPkg, "", "  ")
 	if err != nil {
+		// REVIEW: Use a log package instead of just printing errors to standard out.
 		println(err.Error())
+		// REVIEW: Use http package status codes instead of hardcoding the status.
 		w.WriteHeader(500)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	// REVIEW: Use http package status codes instead of hardcoding the status.
 	w.WriteHeader(200)
 
 	// Ignoring ResponseWriter errors
+	// REVIEW: Don't ignore the errors, handle them properly.
 	_, _ = w.Write(stringified)
 }
 
@@ -125,15 +131,24 @@ func fetchPackage(name, version string) (*npmPackageResponse, error) {
 	}
 
 	var parsed npmPackageResponse
+
+	// REVIEW: Unhandled errors here.
 	_ = json.Unmarshal(body, &parsed)
 	return &parsed, nil
 }
 
 func fetchPackageMeta(p string) (*npmPackageMetaResponse, error) {
+	// REVIEW: We never check the status code here. A bad status code doesn't result in an err.
 	resp, err := http.Get(fmt.Sprintf("https://registry.npmjs.org/%s", p))
 	if err != nil {
 		return nil, err
 	}
+
+	// REVIEW: Need something like below.
+	//if resp.StatusCode != http.StatusOK {
+	//	return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	//}
+
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
@@ -142,6 +157,8 @@ func fetchPackageMeta(p string) (*npmPackageMetaResponse, error) {
 	}
 
 	var parsed npmPackageMetaResponse
+
+	// REVIEW: No need to cast the body to a []byte. Already is that type.
 	if err := json.Unmarshal([]byte(body), &parsed); err != nil {
 		return nil, err
 	}
