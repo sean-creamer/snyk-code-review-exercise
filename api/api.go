@@ -49,7 +49,7 @@ func packageHandler(w http.ResponseWriter, r *http.Request) {
 	// i.e., visited := make(map[string]bool) and pass the map to resolveDependencies.
 	if err := resolveDependencies(rootPkg, pkgVersion); err != nil {
 		// REVIEW: Use the apiLogger instead of just printing errors to standard out.
-		// i.e., apiLogger.Error("failed to resolve dependencies", err)
+		// i.e., apiLogger.Error("failed to resolve dependencies", "error", err)
 		println(err.Error())
 		// REVIEW: Use http package status codes instead of hardcoding the status.
 		w.WriteHeader(500)
@@ -59,7 +59,7 @@ func packageHandler(w http.ResponseWriter, r *http.Request) {
 	stringified, err := json.MarshalIndent(rootPkg, "", "  ")
 	if err != nil {
 		// REVIEW: Use the apiLogger instead of just printing errors to standard out.
-		// i.e., apiLogger.Error("failed to marshal JSON", err)
+		// i.e., apiLogger.Error("failed to marshal JSON", "error", err)
 		println(err.Error())
 		// REVIEW: Use http package status codes instead of hardcoding the status.
 		w.WriteHeader(500)
@@ -71,7 +71,10 @@ func packageHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 
 	// Ignoring ResponseWriter errors
-	// REVIEW: Don't ignore the errors, handle them properly.
+	// REVIEW: Don't ignore the errors, handle them properly. i.e.,
+	// if _, err := w.Write(stringified); err != nil {
+	//	apiLogger.Error("failed to write response", "error", err)
+	// }
 	_, _ = w.Write(stringified)
 }
 
