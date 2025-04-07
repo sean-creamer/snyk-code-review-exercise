@@ -48,7 +48,8 @@ func packageHandler(w http.ResponseWriter, r *http.Request) {
 	// REVIEW: Declare the visited map[string]bool described in the comment above resolveDependencies
 	// i.e., visited := make(map[string]bool) and pass the map to resolveDependencies.
 	if err := resolveDependencies(rootPkg, pkgVersion); err != nil {
-		// REVIEW: Use a log package instead of just printing errors to standard out.
+		// REVIEW: Use the apiLogger instead of just printing errors to standard out.
+		// i.e., apiLogger.Error("failed to resolve dependencies", err)
 		println(err.Error())
 		// REVIEW: Use http package status codes instead of hardcoding the status.
 		w.WriteHeader(500)
@@ -57,7 +58,8 @@ func packageHandler(w http.ResponseWriter, r *http.Request) {
 
 	stringified, err := json.MarshalIndent(rootPkg, "", "  ")
 	if err != nil {
-		// REVIEW: Use a log package instead of just printing errors to standard out.
+		// REVIEW: Use the apiLogger instead of just printing errors to standard out.
+		// i.e., apiLogger.Error("failed to marshal JSON", err)
 		println(err.Error())
 		// REVIEW: Use http package status codes instead of hardcoding the status.
 		w.WriteHeader(500)
