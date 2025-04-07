@@ -12,7 +12,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// REVIEW: Define a package level logger that will be correctly set in the call to New:
+// var apiLogger *slog.Logger = slog.Default()
+
+// REVIEW: Add a parameter for the logger.
 func New() http.Handler {
+	// REVIEW: Set the passed in logger to the package level apiLogger.
 	router := mux.NewRouter()
 	router.Handle("/package/{package}/{version}", http.HandlerFunc(packageHandler))
 	return router
@@ -39,7 +44,9 @@ func packageHandler(w http.ResponseWriter, r *http.Request) {
 	pkgName := vars["package"]
 	pkgVersion := vars["version"]
 
-	rootPkg := &NpmPackageVersion{Name: pkgName, Dependencies: map[string]*NpmPackageVersion{}}
+	rootPkg := &NpmPackageVersion{Name: pkgName, Dependencies: make(map[string]*NpmPackageVersion)}
+	// REVIEW: Declare the visited map[string]bool described in the comment above resolveDependencies
+	// i.e., visited := make(map[string]bool) and pass the map to resolveDependencies.
 	if err := resolveDependencies(rootPkg, pkgVersion); err != nil {
 		// REVIEW: Use a log package instead of just printing errors to standard out.
 		println(err.Error())
@@ -66,6 +73,9 @@ func packageHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(stringified)
 }
 
+// REVIEW: Circular dependencies could cause infinite recursion. Add a visited map[string]bool
+// where the key is the name + "@" + concreteVersion. Then you need to add a check after the
+// pkg.Version is set to see if we this key is in visited. If it is, stop processing.
 func resolveDependencies(pkg *NpmPackageVersion, versionConstraint string) error {
 	pkgMeta, err := fetchPackageMeta(pkg.Name)
 	if err != nil {
@@ -84,6 +94,7 @@ func resolveDependencies(pkg *NpmPackageVersion, versionConstraint string) error
 	for dependencyName, dependencyVersionConstraint := range npmPkg.Dependencies {
 		dep := &NpmPackageVersion{Name: dependencyName, Dependencies: map[string]*NpmPackageVersion{}}
 		pkg.Dependencies[dependencyName] = dep
+		// REVIEW: Add the visited map to the resolveDependencies call below.
 		if err := resolveDependencies(dep, dependencyVersionConstraint); err != nil {
 			return err
 		}
@@ -132,19 +143,24 @@ func fetchPackage(name, version string) (*npmPackageResponse, error) {
 
 	var parsed npmPackageResponse
 
-	// REVIEW: Unhandled errors here.
+	// REVIEW: Unhandled errors here. Do something like the following:
+	// err = json.Unmarshal(body, &parsed)
+	//	if err != nil {
+	//		return nil, fmt.Errorf("failed to unmarshal package data: %w", err)
+	//	}
 	_ = json.Unmarshal(body, &parsed)
 	return &parsed, nil
 }
 
 func fetchPackageMeta(p string) (*npmPackageMetaResponse, error) {
-	// REVIEW: We never check the status code here. A bad status code doesn't result in an err.
+	// REVIEW: Never check the status code of the HTTP Response we get back from NPM.
+	// See next comment.
 	resp, err := http.Get(fmt.Sprintf("https://registry.npmjs.org/%s", p))
 	if err != nil {
 		return nil, err
 	}
 
-	// REVIEW: Need something like below.
+	// REVIEW: Add something like this:
 	//if resp.StatusCode != http.StatusOK {
 	//	return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	//}
