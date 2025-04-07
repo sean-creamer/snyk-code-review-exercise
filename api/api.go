@@ -139,6 +139,7 @@ func fetchPackage(name, version string) (*npmPackageResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	// REVIEW: Handle possible error returned from Close.
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
@@ -170,6 +171,7 @@ func fetchPackageMeta(p string) (*npmPackageMetaResponse, error) {
 	//	return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	//}
 
+	// REVIEW: Handle possible error returned from Close.
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
